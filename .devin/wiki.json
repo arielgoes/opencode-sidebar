@@ -1,0 +1,272 @@
+{
+  "repo_notes": [
+    {
+      "content": ""
+    }
+  ],
+  "pages": [
+    {
+      "title": "Overview",
+      "purpose": "High-level introduction to the opencode-sidebar VS Code extension: what it does, how it fits together, and pointers to child pages for deeper reading.",
+      "page_notes": [
+        {
+          "content": ""
+        }
+      ]
+    },
+    {
+      "title": "Getting Started",
+      "purpose": "Installation, configuration settings (binaryPath, serverUrl, serverArgs, defaultModel), activation events, and the VS Code command palette commands exposed by the extension.",
+      "parent": "Overview",
+      "page_notes": [
+        {
+          "content": ""
+        }
+      ]
+    },
+    {
+      "title": "Architecture Overview",
+      "purpose": "Bird's-eye view of the three-layer architecture: VS Code Extension Host, Webview UI, and the opencode backend server. Describes how the layers communicate and links to detailed child pages.",
+      "parent": "Overview",
+      "page_notes": [
+        {
+          "content": ""
+        }
+      ]
+    },
+    {
+      "title": "Extension Host",
+      "purpose": "Overview of the Node.js/VS Code extension host layer: activation, provider management, server lifecycle, and the bridge to the webview. Links to child pages for each major subsystem.",
+      "page_notes": [
+        {
+          "content": ""
+        }
+      ]
+    },
+    {
+      "title": "Extension Activation and Commands",
+      "purpose": "Details the activate/deactivate lifecycle, command registration (newSession, restartServer, openSettings, focusSidebar, manageProviderKeys), and the provider key management UI flow using VS Code QuickPick.",
+      "parent": "Extension Host",
+      "page_notes": [
+        {
+          "content": ""
+        }
+      ]
+    },
+    {
+      "title": "SidebarProvider and Server Lifecycle",
+      "purpose": "Covers SidebarProvider (WebviewViewProvider implementation), server detection via pgrep/ss/lsof, Spawn vs Attach modes, CSP/nonce security, and the restartServer/dispose lifecycle.",
+      "parent": "Extension Host",
+      "page_notes": [
+        {
+          "content": ""
+        }
+      ]
+    },
+    {
+      "title": "Message Bridge and Bridge Protocol",
+      "purpose": "Explains the MessageBridge class that routes EventFromWebview actions to API calls and posts EventToWebview responses back. Covers the full discriminated-union protocol: ready, send, stop, switchSession, permissionReply, etc.",
+      "parent": "Extension Host",
+      "page_notes": [
+        {
+          "content": ""
+        }
+      ]
+    },
+    {
+      "title": "OpenCode Backend Client",
+      "purpose": "Overview of the src/opencode/ layer that wraps the @opencode-ai/sdk and manages the server process and real-time event stream. Links to child pages for each component.",
+      "page_notes": [
+        {
+          "content": ""
+        }
+      ]
+    },
+    {
+      "title": "API Client",
+      "purpose": "Deep dive into createApiClient, ApiClientOptions, the unwrap error helper, adaptFetch for Electron/Node compatibility, and all ApiClient methods: listSessions, createSession, sendPrompt, abort, replyPermission, listProviders.",
+      "parent": "OpenCode Backend Client",
+      "page_notes": [
+        {
+          "content": ""
+        }
+      ]
+    },
+    {
+      "title": "Server Process Management",
+      "purpose": "Covers startOpencodeServer, ServerHandle, ServerOptions, the URL_RE stdout-parsing pattern for dynamic port discovery, and graceful SIGTERM/SIGKILL shutdown via disposeChild.",
+      "parent": "OpenCode Backend Client",
+      "page_notes": [
+        {
+          "content": ""
+        }
+      ]
+    },
+    {
+      "title": "SSE Client and Event Streaming",
+      "purpose": "Explains connectEventStream, exponential-backoff reconnection, openSdkEventStream adapter for the SDK's AsyncGenerator, and the full Event union type re-exported from types.ts.",
+      "parent": "OpenCode Backend Client",
+      "page_notes": [
+        {
+          "content": ""
+        }
+      ]
+    },
+    {
+      "title": "Webview UI",
+      "purpose": "Overview of the browser-side webview application: bootstrapping, component tree, state management, and styling. Links to child pages for each major area.",
+      "page_notes": [
+        {
+          "content": ""
+        }
+      ]
+    },
+    {
+      "title": "State Management",
+      "purpose": "Covers the Store class, State interface, initialState, and the reduce/reduceSse pure functions. Details session maps, partsByMessage, contextTokens, pendingPermission, status transitions, and modelNotifications.",
+      "parent": "Webview UI",
+      "page_notes": [
+        {
+          "content": ""
+        }
+      ]
+    },
+    {
+      "title": "UI Components",
+      "purpose": "Overview of the component tree mounted by main.ts (Header, SessionList, MessageList, Composer) and how each component subscribes to the Store and posts EventFromWebview messages.",
+      "parent": "Webview UI",
+      "page_notes": [
+        {
+          "content": ""
+        }
+      ]
+    },
+    {
+      "title": "Session List Component",
+      "purpose": "Details mountSessionList: collapsible session panel, session-row rendering, active highlighting, inline rename via dblclick, delete button, formatRel timestamp helper, and auto-collapse on session switch.",
+      "parent": "Webview UI",
+      "page_notes": [
+        {
+          "content": ""
+        }
+      ]
+    },
+    {
+      "title": "Message List Component",
+      "purpose": "Details mountMessageList: rendering user vs assistant messages, role labels, model-change notices, scroll-pinning, thinking indicator, sessionRetry display, session error banner, and delegation to TextPart/ToolPart/PermissionPart.",
+      "parent": "Webview UI",
+      "page_notes": [
+        {
+          "content": ""
+        }
+      ]
+    },
+    {
+      "title": "Composer Component",
+      "purpose": "Details mountComposer: textarea auto-resize, Enter-to-send, Send/Stop button toggling based on streaming status, model picker integration, and how prompts are dispatched via the post function.",
+      "parent": "Webview UI",
+      "page_notes": [
+        {
+          "content": ""
+        }
+      ]
+    },
+    {
+      "title": "Model Picker Component",
+      "purpose": "Covers mountModelPicker, groupModels utility, provider ordering via PROVIDER_LABELS/KNOWN_ORDER, context-bar fill percentage, LSP label, search filtering, event delegation for model selection, and cleanup lifecycle.",
+      "parent": "Webview UI",
+      "page_notes": [
+        {
+          "content": ""
+        }
+      ]
+    },
+    {
+      "title": "Markdown Rendering and Syntax Highlighting",
+      "purpose": "Explains renderMarkdownInto (marked + GFM), the Shiki highlighter initialization, language list, dark/light theme detection, code-copy button injection, and graceful degradation when Shiki is unavailable.",
+      "parent": "Webview UI",
+      "page_notes": [
+        {
+          "content": ""
+        }
+      ]
+    },
+    {
+      "title": "Tool and Permission Parts",
+      "purpose": "Covers mountToolPart (status symbols, duration display, argsSummary), mountPermissionPart (Allow/Allow once/Deny buttons, keyboard shortcuts, renderMeta for command/diff/pattern metadata), and the PermissionDecision flow.",
+      "parent": "Webview UI",
+      "page_notes": [
+        {
+          "content": ""
+        }
+      ]
+    },
+    {
+      "title": "Build, Tooling, and Development",
+      "purpose": "Overview of the build pipeline, test infrastructure, and developer tooling. Links to child pages for build configuration and testing.",
+      "page_notes": [
+        {
+          "content": ""
+        }
+      ]
+    },
+    {
+      "title": "Build Pipeline",
+      "purpose": "Details esbuild.js dual-bundle setup (extension CJS for Node18, webview ESM for browser/es2022), watch mode with watchPlugin, production minification, source maps, and the dist/ output layout.",
+      "parent": "Build, Tooling, and Development",
+      "page_notes": [
+        {
+          "content": ""
+        }
+      ]
+    },
+    {
+      "title": "Testing Infrastructure",
+      "purpose": "Covers the three-tier test strategy: vitest+jsdom unit tests (scripts/test-unit.sh, .nvmrc), @vscode/test-electron integration tests (.vscode-test.mjs), and ESLint linting. Describes test patterns used across state, apiClient, bridge, serverProcess, and component tests.",
+      "parent": "Build, Tooling, and Development",
+      "page_notes": [
+        {
+          "content": ""
+        }
+      ]
+    },
+    {
+      "title": "Design Documents and Roadmap",
+      "purpose": "Overview of the planning and specification documents in docs/. Links to child pages covering the diff panel plan and model picker design.",
+      "page_notes": [
+        {
+          "content": ""
+        }
+      ]
+    },
+    {
+      "title": "Diff Panel Plan",
+      "purpose": "Documents the planned bottom-panel webview for reviewing LLM-proposed code changes as per-hunk diff blocks with Accept/Reject/Edit buttons, DiffParser, DiffApplier, and the data flow from SSE events through WorkspaceEdit.",
+      "parent": "Design Documents and Roadmap",
+      "page_notes": [
+        {
+          "content": ""
+        }
+      ]
+    },
+    {
+      "title": "Model Picker Design",
+      "purpose": "Documents the design specification and implementation plan for the model picker feature: provider grouping, context window visualization, LSP status, and the search/filter interaction model.",
+      "parent": "Design Documents and Roadmap",
+      "page_notes": [
+        {
+          "content": ""
+        }
+      ]
+    },
+    {
+      "title": "Glossary",
+      "purpose": "Definitions of codebase-specific terms, abbreviations, and domain concepts for onboarding engineers, each with code pointers.",
+      "page_notes": [
+        {
+          "content": ""
+        }
+      ]
+    }
+  ]
+}
