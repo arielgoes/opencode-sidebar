@@ -1,0 +1,106 @@
+{
+  "name": "opencode-sidebar",
+  "displayName": "opencode-sidebar",
+  "description": "An extension for a GUI OpenCode",
+  "version": "0.0.1",
+  "engines": {
+    "vscode": "^1.118.0"
+  },
+  "categories": [
+    "Other"
+  ],
+  "activationEvents": ["onView:opencode.sidebar"],
+  "main": "./dist/extension.js",
+  "contributes": {
+    "viewsContainers": {
+      "activitybar": [
+        {
+          "id": "opencode",
+          "title": "OpenCode",
+          "icon": "media/opencode.svg"
+        }
+      ]
+    },
+    "views": {
+      "opencode": [
+        {
+          "id": "opencode.sidebar",
+          "name": "Chat",
+          "type": "webview",
+          "icon": "media/opencode.svg"
+        }
+      ]
+    },
+    "commands": [
+      { "command": "opencode.newSession",    "title": "OpenCode: New Session" },
+      { "command": "opencode.restartServer", "title": "OpenCode: Restart Server" },
+      { "command": "opencode.openSettings",  "title": "OpenCode: Open Settings" },
+      { "command": "opencode.focusSidebar",   "title": "OpenCode: Focus Sidebar" },
+      { "command": "opencode.addProviderKey",      "title": "OpenCode: Add Provider API Key" },
+      { "command": "opencode.removeProviderKey",  "title": "OpenCode: Remove Provider Key" },
+      { "command": "opencode.manageProviderKeys", "title": "OpenCode: Manage Provider Keys" }
+    ],
+    "configuration": {
+      "title": "OpenCode",
+      "properties": {
+        "opencode.binaryPath": {
+          "type": "string",
+          "default": "opencode",
+          "description": "Path to the opencode binary. 'opencode' resolves on PATH."
+        },
+        "opencode.serverArgs": {
+          "type": "array",
+          "items": { "type": "string" },
+          "default": [],
+          "description": "Extra arguments passed to `opencode serve`."
+        },
+        "opencode.defaultModel": {
+          "type": "string",
+          "default": "",
+          "description": "Default model for new sessions in the form provider/model. Empty = use opencode's default."
+        },
+        "opencode.serverUrl": {
+          "type": "string",
+          "default": "",
+          "description": "Connect to an already-running opencode server instead of spawning one. Example: http://localhost:4096. Leave empty to auto-spawn."
+        }
+      }
+    }
+  },
+  "scripts": {
+    "vscode:prepublish": "npm run package",
+    "compile": "npm run check-types && npm run lint && node esbuild.js",
+    "watch": "npm-run-all -p watch:*",
+    "watch:esbuild": "node esbuild.js --watch",
+    "watch:tsc": "tsc --noEmit --watch --project tsconfig.json",
+    "package": "npm run check-types && npm run lint && node esbuild.js --production",
+    "compile-tests": "tsc -p . --outDir out",
+    "watch-tests": "tsc -p . -w --outDir out",
+    "pretest": "npm run compile-tests && npm run compile && npm run lint",
+    "check-types": "tsc --noEmit",
+    "lint": "eslint src",
+    "test": "vscode-test",
+    "test:unit": "bash scripts/test-unit.sh run",
+    "test:unit:watch": "bash scripts/test-unit.sh"
+  },
+  "devDependencies": {
+    "@types/jsdom": "^21.1.7",
+    "@types/mocha": "^10.0.10",
+    "@types/node": "22.x",
+    "@types/vscode": "^1.118.0",
+    "@vscode/test-cli": "^0.0.12",
+    "@vscode/test-electron": "^2.5.2",
+    "esbuild": "^0.27.3",
+    "eslint": "^9.39.3",
+    "jsdom": "^25.0.1",
+    "npm-run-all": "^4.1.5",
+    "typescript": "^5.9.3",
+    "typescript-eslint": "^8.56.1",
+    "vitest": "^2.1.9"
+  },
+  "dependencies": {
+    "@opencode-ai/sdk": "^1.14.33",
+    "marked": "^14.1.4",
+    "shiki": "^1.29.2"
+  }
+}

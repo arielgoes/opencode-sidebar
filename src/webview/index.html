@@ -1,0 +1,12 @@
+<!doctype html>
+<html>
+  <head>
+    <meta charset="utf-8">
+    <meta http-equiv="Content-Security-Policy" content="default-src 'none'; style-src 'unsafe-inline' {{cspSource}}; script-src 'nonce-{{nonce}}'; img-src {{cspSource}} data:;">
+    <link rel="stylesheet" href="{{uiCssUri}}">
+  </head>
+  <body>
+    <div id="root"></div>
+    <script type="module" nonce="{{nonce}}" src="{{mainJsUri}}"></script>
+  </body>
+</html>
