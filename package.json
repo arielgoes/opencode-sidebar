@@ -2,8 +2,9 @@
   "name": "opencode-sidebar",
   "displayName": "OpenCode Sidebar",
   "description": "Integrated sidebar chat interface for OpenCode — manage AI sessions, switch models, and configure providers without leaving VS Code.",
-  "version": "0.0.1",
+  "version": "0.0.2",
   "publisher": "wisdowl",
+  "icon": "media/icon.png",
   "repository": {
     "type": "git",
     "url": "https://github.com/arielgoes/opencode-sidebar.git"
