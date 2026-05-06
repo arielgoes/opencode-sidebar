@@ -16,9 +16,13 @@ A VS Code extension that integrates [OpenCode](https://opencode.ai) directly int
 
 ## Installation (VS Code Marketplace)
 
-> Coming soon — the extension is not yet published to the marketplace.
->
-> In the meantime, install it from a `.vsix` package (see [Build from Source](#build-from-source) below).
+Search for **OpenCode Sidebar** in the VS Code Extensions view (`Ctrl+Shift+X`), or install from the terminal:
+
+```bash
+code --install-extension wisdowl.opencode-sidebar
+```
+
+Alternatively, install from a `.vsix` package (see [Build from Source](#build-from-source) below).
 
 ## Requirements
 
@@ -99,9 +103,82 @@ To run and debug the extension during development:
 2. Press `F5` to launch the **Extension Development Host**
 3. The OpenCode sidebar will be available in the new window's activity bar
 
+## Publishing to the Marketplace
+
+### First-time setup
+
+Make sure you are on Node.js 24 (the version in `.nvmrc`):
+
+```bash
+nvm use
+```
+
+### Releasing an update
+
+1. **Bump the version** in `package.json` (follows [semver](https://semver.org)):
+   ```json
+   "version": "0.1.0"
+   ```
+
+2. **Build the `.vsix`:**
+   ```bash
+   npx @vscode/vsce package
+   ```
+   This runs the full build (`check-types`, `lint`, `esbuild --production`) and produces `opencode-sidebar-<version>.vsix` in the project root.
+
+3. **Upload to the marketplace** — two options:
+
+   **Option A — Manual upload (no PAT needed):**
+   - Go to [marketplace.visualstudio.com/manage/publishers/wisdowl](https://marketplace.visualstudio.com/manage/publishers/wisdowl)
+   - Click the `...` menu next to the extension → **Update**
+   - Select the new `.vsix` file → **Upload**
+
+   **Option B — CLI publish (requires a PAT):**
+   - Create a Personal Access Token at [dev.azure.com](https://dev.azure.com): User settings → Personal access tokens → New Token → Organization: *All accessible organizations* → Scopes: *Marketplace → Manage*
+   - Then run:
+     ```bash
+     npx @vscode/vsce publish --pat YOUR_PAT_HERE
+     ```
+
+4. **Commit and push** the version bump:
+   ```bash
+   git add package.json
+   git commit -m "chore: bump version to 0.1.0"
+   git push
+   ```
+
 ## Architecture Overview
 
-The extension is composed of three layers:
+```mermaid
+graph TD
+    subgraph EXT["VS Code Extension Host"]
+        ET["extension.ts"]
+        SP["SidebarProvider"]
+        SC["ServerProcess"]
+        AC["ApiClient"]
+    end
+
+    subgraph WV["Webview UI (Browser)"]
+        ST["main.ts (Store)"]
+        CO["Composer"]
+        ML["MessageList"]
+        SL["SessionList"]
+    end
+
+    VIEW["opencode.sidebar view"]
+    BIN["opencode serve (Binary)"]
+
+    ET -->|manages| SP
+    ET -->|registers| VIEW
+    SP <-->|"MessageBridge (postMessage)"| ST
+    SP -->|spawns / connects| SC
+    SP -->|uses| AC
+    SC -->|STDIO / HTTP| BIN
+    AC -->|REST / SSE| BIN
+    ST -->|renders| CO
+    ST -->|renders| ML
+    ST -->|renders| SL
+```
 
 | Layer | Location | Description |
 |---|---|---|
