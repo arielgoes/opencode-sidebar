@@ -1,8 +1,7 @@
 import { Store } from './state';
-import { mountHeader } from './components/Header';
-import { mountSessionList } from './components/SessionList';
 import { mountMessageList } from './components/MessageList';
 import { mountComposer } from './components/Composer';
+import { mountSessionSwitcher } from './components/SessionSwitcher';
 import { initHighlighter } from './highlight';
 import type { EventFromWebview, EventToWebview } from '../sidebar/bridgeProtocol';
 
@@ -17,15 +16,13 @@ initHighlighter().catch(() => {/* highlight degrades gracefully if Shiki fails *
 
 const root = document.getElementById('root')!;
 root.innerHTML = `
-  <div class="header"></div>
-  <div class="session-list"></div>
   <div id="banner" class="banner" style="display:none;"></div>
+  <div class="session-switcher"></div>
   <div class="messages"></div>
   <div class="composer"></div>
 `;
 
-mountHeader(root.querySelector('.header')!, { post });
-mountSessionList(root.querySelector('.session-list')!, { store, post });
+mountSessionSwitcher(root.querySelector('.session-switcher')!, { store, post });
 mountMessageList(root.querySelector('.messages')!, { store, post });
 mountComposer(root.querySelector('.composer')!, { store, post });
 
@@ -50,6 +47,9 @@ store.subscribe(s => {
 
 window.addEventListener('message', (ev: MessageEvent<EventToWebview>) => {
   store.dispatch(ev.data);
+  if (ev.data.type === 'ready' && !ev.data.activeSessionId) {
+    post({ type: 'newSession' });
+  }
 });
 
 post({ type: 'ready' });

@@ -18,7 +18,7 @@ describe('reduce', () => {
   });
 
   it('sessionMessages accumulates tokens from step-finish parts', () => {
-    let s = reduce(initialState(), { type: 'ready', sessions: [{id:'s1',title:'a',updatedAt:1}], activeSessionId:'s1', defaultModel:null, models: [], directory: '', lspCount: 0 });
+    let s = reduce(initialState(), { type: 'ready', sessions: [{id:'s1',title:'a',updatedAt:1}], activeSessionId:'s1', defaultModel:null, models: [], directory: '', lspCount: 0, serverUrl: '' });
     s = reduce(s, { type: 'sessionMessages', sessionId:'s1', messages:[
       { info:{id:'m1',role:'user'}, parts:[] },
       { info:{id:'m2',role:'assistant'}, parts:[{type:'step-finish',tokens:{input:500}}] },
@@ -38,7 +38,7 @@ describe('reduce', () => {
   it('ready sets sessions and selects first', () => {
     const s = reduce(initialState(), {
       type: 'ready', sessions: [{ id: 's1', title: 'A', updatedAt: 1 }], activeSessionId: 's1', defaultModel: 'anthropic/claude',
-      models: [], directory: '', lspCount: 2,
+      models: [], directory: '', lspCount: 2, serverUrl: '',
     });
     expect(s.sessions.map(x => x.id)).toEqual(['s1']);
     expect(s.activeSessionId).toBe('s1');
@@ -101,10 +101,34 @@ describe('reduce', () => {
   });
 
   it('sessionMessages populates messageIdsBySession and partsByMessage', () => {
-    let s = reduce(initialState(), { type: 'ready', sessions: [{id:'s1',title:'a',updatedAt:1}], activeSessionId:'s1', defaultModel:null, models: [], directory: '', lspCount: 0 });
+    let s = reduce(initialState(), { type: 'ready', sessions: [{id:'s1',title:'a',updatedAt:1}], activeSessionId:'s1', defaultModel:null, models: [], directory: '', lspCount: 0, serverUrl: '' });
     s = reduce(s, { type: 'sessionMessages', sessionId:'s1', messages:[{ info:{id:'m1'}, parts:[{id:'p1',type:'text',text:'hello'}] }] });
     expect(s.messageIdsBySession.get('s1')).toEqual(['m1']);
     expect((s.partsByMessage.get('m1')![0] as any).text).toBe('hello');
+  });
+
+  it('session.idle closes stuck running tool parts', () => {
+    let s = reduce(initialState(), { type: 'ready', sessions: [{id:'s1',title:'a',updatedAt:1}], activeSessionId:'s1', defaultModel:null, models: [], directory: '', lspCount: 0, serverUrl: '' });
+    s = reduce(s, { type: 'thinking', sessionId: 's1' });
+    s = reduce(s, { type: 'sse', event: { type: 'message.updated', properties: { info: { id: 'm1', sessionID: 's1', role: 'assistant' } } } as any });
+    s = reduce(s, { type: 'sse', event: { type: 'message.part.updated', properties: { part: { id: 'p1', messageID: 'm1', sessionID: 's1', type: 'tool', tool: 'view', state: { status: 'running', input: { file_path: '/img.png' } } } } } as any });
+    const toolPart = s.partsByMessage.get('m1')![0] as any;
+    expect(toolPart.state.status).toBe('running');
+
+    s = reduce(s, { type: 'sse', event: { type: 'session.idle', properties: {} } as any });
+    const closedTool = s.partsByMessage.get('m1')![0] as any;
+    expect(closedTool.state.status).toBe('error');
+    expect(closedTool.state.output).toContain('timed out');
+  });
+
+  it('session.idle preserves completed tool parts', () => {
+    let s = reduce(initialState(), { type: 'ready', sessions: [{id:'s1',title:'a',updatedAt:1}], activeSessionId:'s1', defaultModel:null, models: [], directory: '', lspCount: 0, serverUrl: '' });
+    s = reduce(s, { type: 'sse', event: { type: 'message.updated', properties: { info: { id: 'm1', sessionID: 's1', role: 'assistant' } } } as any });
+    s = reduce(s, { type: 'sse', event: { type: 'message.part.updated', properties: { part: { id: 'p1', messageID: 'm1', sessionID: 's1', type: 'tool', tool: 'bash', state: { status: 'completed', input: { command: 'ls' }, output: 'file.txt' } } } } as any });
+    s = reduce(s, { type: 'sse', event: { type: 'session.idle', properties: {} } as any });
+    const toolPart = s.partsByMessage.get('m1')![0] as any;
+    expect(toolPart.state.status).toBe('completed');
+    expect(toolPart.state.output).toBe('file.txt');
   });
 });
 

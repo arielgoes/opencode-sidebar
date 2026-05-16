@@ -6,7 +6,7 @@ import { mountComposer } from '../../webview/components/Composer';
 describe('Composer', () => {
   it('Enter sends message; Shift+Enter inserts newline', () => {
     const store = new Store();
-    store.dispatch({ type: 'ready', sessions: [{ id: 's1', title: 'a', updatedAt: 1 }], activeSessionId: 's1', defaultModel: 'anthropic/claude', models: [{ id: 'anthropic/claude', label: 'anthropic / claude' }], directory: '', lspCount: 0 });
+    store.dispatch({ type: 'ready', sessions: [{ id: 's1', title: 'a', updatedAt: 1 }], activeSessionId: 's1', defaultModel: 'anthropic/claude', models: [{ id: 'anthropic/claude', label: 'anthropic / claude' }], directory: '', lspCount: 0, serverUrl: '' });
     const el = document.createElement('div');
     const post = vi.fn();
     mountComposer(el, { store, post });
@@ -22,7 +22,7 @@ describe('Composer', () => {
 
   it('shows Stop button while streaming; Send is always visible', () => {
     const store = new Store();
-    store.dispatch({ type: 'ready', sessions: [{ id: 's1', title: 'a', updatedAt: 1 }], activeSessionId: 's1', defaultModel: null, models: [], directory: '', lspCount: 0 });
+    store.dispatch({ type: 'ready', sessions: [{ id: 's1', title: 'a', updatedAt: 1 }], activeSessionId: 's1', defaultModel: null, models: [], directory: '', lspCount: 0, serverUrl: '' });
     store.dispatch({ type: 'sse', event: { type: 'message.updated', properties: { info: { id: 'm1', sessionID: 's1' } } } as any });
     const el = document.createElement('div');
     const post = vi.fn();
@@ -37,7 +37,7 @@ describe('Composer', () => {
 
   it('trigger button opens model picker', () => {
     const store = new Store();
-    store.dispatch({ type: 'ready', sessions: [{ id: 's1', title: 'a', updatedAt: 1 }], activeSessionId: 's1', defaultModel: 'anthropic/claude', models: [{ id: 'anthropic/claude', label: 'Claude' }], directory: '', lspCount: 0 });
+    store.dispatch({ type: 'ready', sessions: [{ id: 's1', title: 'a', updatedAt: 1 }], activeSessionId: 's1', defaultModel: 'anthropic/claude', models: [{ id: 'anthropic/claude', label: 'Claude' }], directory: '', lspCount: 0, serverUrl: '' });
     const el = document.createElement('div');
     const post = vi.fn();
     mountComposer(el, { store, post });
@@ -50,7 +50,7 @@ describe('Composer', () => {
 
   it('shows current model label on trigger button', () => {
     const store = new Store();
-    store.dispatch({ type: 'ready', sessions: [{ id: 's1', title: 'a', updatedAt: 1 }], activeSessionId: 's1', defaultModel: 'anthropic/claude', models: [{ id: 'anthropic/claude', label: 'Claude' }], directory: '', lspCount: 0 });
+    store.dispatch({ type: 'ready', sessions: [{ id: 's1', title: 'a', updatedAt: 1 }], activeSessionId: 's1', defaultModel: 'anthropic/claude', models: [{ id: 'anthropic/claude', label: 'Claude' }], directory: '', lspCount: 0, serverUrl: '' });
     const el = document.createElement('div');
     const post = vi.fn();
     mountComposer(el, { store, post });

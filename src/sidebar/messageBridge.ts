@@ -7,6 +7,7 @@ export interface BridgeOptions {
   post: (msg: EventToWebview) => void;
   onRestartServer: () => void;
   directory: string;
+  serverUrl: string;
 }
 
 export class MessageBridge {
@@ -20,12 +21,12 @@ export class MessageBridge {
         case 'ready': {
           const [sessions, providers] = await Promise.all([api.listSessions(), api.listProviders()]);
           const list: SessionSummary[] = (sessions as any[]).map(s => ({
-            id: s.id, title: s.title ?? '(untitled)', updatedAt: s.time?.updated ?? 0,
+            id: s.id, title: s.title || '(untitled)', updatedAt: s.time?.updated ?? 0,
           }));
           const { defaultModel, models } = buildModelList(providers);
           let lspCount = 0;
           try { const lsp = await api.raw.lsp.status(); lspCount = (lsp.data as any[]).length; } catch { /* ignore */ }
-          post({ type: 'ready', sessions: list, activeSessionId: list[0]?.id ?? null, defaultModel, models, directory: this.opts.directory, lspCount });
+          post({ type: 'ready', sessions: list, activeSessionId: list[0]?.id ?? null, defaultModel, models, directory: this.opts.directory, lspCount, serverUrl: this.opts.serverUrl });
           if (list[0]) {
             const messages = await api.listMessages(list[0].id);
             post({ type: 'sessionMessages', sessionId: list[0].id, messages: messages as any });
@@ -55,6 +56,13 @@ export class MessageBridge {
         case 'renameSession':  await api.renameSession(msg.sessionId, msg.title); break;
         case 'permissionReply': await api.replyPermission(msg.sessionId, msg.permissionId, msg.decision); break;
         case 'restartServer':  onRestartServer(); break;
+        case 'fetchModels': {
+          const providers = await api.listProviders();
+          const { defaultModel, models } = buildModelList(providers);
+          // Send updated models while preserving current session state
+          post({ type: 'modelsRefreshed', models, defaultModel });
+          break;
+        }
       }
     } catch (err: unknown) {
       post({ type: 'error', message: err instanceof Error ? err.message : String(err) });

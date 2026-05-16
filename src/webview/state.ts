@@ -18,10 +18,12 @@ export interface State {
   availableModels: ModelOption[];
   status: 'idle' | 'streaming' | 'error' | 'reconnecting';
   sessionProcessing: boolean;
+  processingSince: number | null;
   sessionRetry: string | null;
   sessionError: string | null;
   modelNotifications: Array<{ id: string; from: string | null; to: string }>;
   serverError: string | null;
+  serverUrl: string;
   modelPickerOpen: boolean;
   lspCount: number;
   contextTokens: Map<string, number>;
@@ -35,10 +37,28 @@ export function initialState(): State {
     pendingPermission: null,
     composer: { text: '', model: '' },
     availableModels: [],
-    status: 'idle', sessionProcessing: false, sessionRetry: null, sessionError: null,
-    modelNotifications: [], serverError: null, modelPickerOpen: false, lspCount: 0,
+    status: 'idle', sessionProcessing: false, processingSince: null, sessionRetry: null, sessionError: null,
+    modelNotifications: [], serverError: null, serverUrl: '', modelPickerOpen: false, lspCount: 0,
     contextTokens: new Map(),
   };
+}
+
+function closeStuckTools(state: State): State {
+  const partsByMessage = new Map(state.partsByMessage);
+  let changed = false;
+  for (const [msgId, parts] of partsByMessage) {
+    const next = parts.map(p => {
+      if ((p as any).type !== 'tool') return p;
+      const st = (p as any).state;
+      if (st && (st.status === 'running' || st.status === 'pending')) {
+        changed = true;
+        return { ...p, state: { ...st, status: 'error', output: st.output || 'Tool timed out — server did not complete this call' } };
+      }
+      return p;
+    });
+    if (changed) { partsByMessage.set(msgId, next); changed = false; }
+  }
+  return { ...state, partsByMessage };
 }
 
 export function reduce(state: State, msg: EventToWebview): State {
@@ -51,6 +71,7 @@ export function reduce(state: State, msg: EventToWebview): State {
       availableModels: msg.models ?? [],
       status: 'idle',
       lspCount: msg.lspCount ?? state.lspCount,
+      serverUrl: msg.serverUrl ?? '',
     };
   }
   if (msg.type === 'serverStatus') {
@@ -78,12 +99,14 @@ export function reduce(state: State, msg: EventToWebview): State {
     return { ...state, partsByMessage, messageIdsBySession, messageRoles, activeSessionId: msg.sessionId, contextTokens };
   }
   if (msg.type === 'thinking') {
-    // Clear previous error when user tries again
-    return { ...state, sessionProcessing: true, sessionRetry: null, sessionError: null };
+    return { ...state, sessionProcessing: true, processingSince: Date.now(), sessionRetry: null, sessionError: null };
   }
   if (msg.type === 'modelChanged') {
     const id = `mc-${Date.now()}`;
     return { ...state, modelNotifications: [...state.modelNotifications, { id, from: msg.from, to: msg.to }] };
+  }
+  if (msg.type === 'modelsRefreshed') {
+    return { ...state, availableModels: msg.models, composer: { ...state.composer, model: state.composer.model || msg.defaultModel || '' } };
   }
   if (msg.type === 'sse') return reduceSse(state, msg.event);
   return state;
@@ -150,35 +173,43 @@ function reduceSse(state: State, e: { type: string; properties: unknown }): Stat
     }
     case 'permission.updated': {
       const perm = p as { id: string; sessionID: string; messageID: string; title: string; metadata: Record<string,unknown>; pattern?: string|string[] };
+      console.log('[state] permission.updated', perm.id, perm.title, 'for session', perm.sessionID);
       return { ...state, pendingPermission: { id: perm.id, sessionId: perm.sessionID, messageId: perm.messageID, title: perm.title, metadata: perm.metadata, pattern: perm.pattern } };
     }
     case 'permission.replied': {
+      console.log('[state] permission.replied', p.permissionID);
       if (state.pendingPermission?.id !== p.permissionID) return state;
       return { ...state, pendingPermission: null };
     }
     case 'session.idle':
-    case 'session.compacted':
-      // Keep sessionError visible — it's cleared only when the user sends a new message
-      return { ...state, status: 'idle', sessionProcessing: false, sessionRetry: null };
+    case 'session.compacted': {
+      let s: State = { ...state, status: 'idle' as const, sessionProcessing: false, processingSince: null, sessionRetry: null };
+      s = closeStuckTools(s);
+      return s;
+    }
     case 'session.status': {
       const sessionStatus = p.status as { type: string; message?: string; attempt?: number };
       if (sessionStatus.type === 'busy') {
-        return { ...state, sessionProcessing: true, sessionRetry: null };
+        return { ...state, sessionProcessing: true, processingSince: state.processingSince ?? Date.now(), sessionRetry: null };
       }
       if (sessionStatus.type === 'idle') {
-        return { ...state, sessionProcessing: false, sessionRetry: null };
+        let s: State = { ...state, sessionProcessing: false, processingSince: null, sessionRetry: null };
+        s = closeStuckTools(s);
+        return s;
       }
       if (sessionStatus.type === 'retry') {
-        return { ...state, sessionProcessing: true, sessionRetry: sessionStatus.message ?? `Retrying (attempt ${sessionStatus.attempt ?? '?'})…` };
+        if (state.sessionError) return state;
+        return { ...state, sessionProcessing: true, processingSince: state.processingSince ?? Date.now(), sessionRetry: sessionStatus.message ?? `Retrying (attempt ${sessionStatus.attempt ?? '?'})…` };
       }
       return state;
     }
     case 'session.error': {
+      if (state.sessionError) return state;
       const err = (p as any).error;
       const msg = err?.data?.message ?? err?.message ?? err?.name
         ?? (typeof err === 'string' ? err : null)
         ?? 'Model returned an error — check Output → OpenCode for details';
-      return { ...state, sessionProcessing: false, sessionRetry: null, sessionError: msg };
+      return { ...state, sessionProcessing: false, processingSince: null, sessionRetry: null, sessionError: msg };
     }
     case 'lsp.updated': {
       const servers = (p as any).servers ?? {};

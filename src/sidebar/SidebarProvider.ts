@@ -152,17 +152,26 @@ export class SidebarProvider implements vscode.WebviewViewProvider {
       post: msg => this.post(msg),
       onRestartServer: () => void this.restartServer(),
       directory: directory ?? '',
+      serverUrl: baseUrl,
     });
 
     this.sseHandle = connectEventStream({
       open: () => openSdkEventStream(api.raw),
       onEvent: e => {
-        if ((e as any).type === 'session.error') {
-          const err = (e as any).properties?.error;
-          const msg = err?.data?.message ?? err?.message ?? JSON.stringify(err ?? e);
+        const ev = e as any;
+        if (ev.type === 'session.error') {
+          const err = ev.properties?.error;
+          const msg = err?.data?.message ?? err?.message ?? JSON.stringify(err ?? ev);
           this.outputChannel.appendLine(`[opencode] session.error: ${msg}`);
         }
-        this.post({ type: 'sse', event: e });
+        if (ev.type === 'permission.updated') {
+          this.outputChannel.appendLine(`[opencode] permission.updated: ${JSON.stringify(ev.properties)}`);
+        }
+        if (ev.type === 'message.part.updated') {
+          const p = ev.properties?.part as any;
+          this.outputChannel.appendLine(`[opencode] part.updated: ${p?.id} ${p?.type} ${p?.tool ?? ''} status=${p?.state?.status ?? '?'} out=${String(p?.state?.output ?? '').slice(0, 40)}`);
+        }
+        this.post({ type: 'sse', event: ev });
       },
       onError: err => this.outputChannel.appendLine(`[opencode] sse error: ${String(err)}`),
       onReconnect: () => this.post({ type: 'serverStatus', status: 'reconnecting' }),

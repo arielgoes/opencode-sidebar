@@ -13,6 +13,7 @@ function createStore(models: Array<{ id: string; label: string; contextLimit?: n
     models,
     directory: '',
     lspCount: 0,
+    serverUrl: '',
   });
   return store;
 }
@@ -53,7 +54,7 @@ describe('ModelPicker', () => {
     const { cleanup } = mountModelPicker(el, { store, post });
     (el.querySelector('.model-trigger') as HTMLElement).click();
     const row = el.querySelector('[data-model-id="openai/gpt-4"]');
-    expect(row!.querySelector('.check')).toBeTruthy();
+    expect(row!.querySelector('.model-checkmark')).toBeTruthy();
     cleanup();
   });
 
@@ -93,7 +94,7 @@ describe('ModelPicker', () => {
     const post = vi.fn();
     const { cleanup } = mountModelPicker(el, { store, post });
     (el.querySelector('.model-trigger') as HTMLElement).click();
-    expect(el.textContent).toContain('no models available');
+    expect(el.textContent).toContain('loading models…');
     cleanup();
   });
 
@@ -103,7 +104,7 @@ describe('ModelPicker', () => {
     const post = vi.fn();
     const { cleanup } = mountModelPicker(el, { store, post });
     (el.querySelector('.model-trigger') as HTMLElement).click();
-    expect(el.querySelector('.model-ctx-info')!.textContent).toContain('128k');
+    expect(el.querySelector('.model-ctx-badge')!.textContent).toContain('128k');
     cleanup();
   });
 
